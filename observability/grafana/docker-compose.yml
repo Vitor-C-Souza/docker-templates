@@ -1,0 +1,21 @@
+services:
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: grafana
+    restart: unless-stopped
+
+    ports:
+      - "${GRAFANA_PORT}:3000"
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  grafana_data:
