@@ -14,20 +14,27 @@ services:
       timeout: 5s
       retries: 5
 
-  evolution:
-    image: evoapicloud/evolution-api:latest
+  evolution-go:
+    image: evoapicloud/evolution-go:latest
     restart: unless-stopped
     environment:
-      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-change_me}
-      DATABASE_ENABLED: "true"
-      DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER:-evolution}:${POSTGRES_PASSWORD:-evolution_password}@postgres:5432/${POSTGRES_DB:-evolution}
-      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      SERVER_PORT: 4000
+      CLIENT_NAME: evolution
+      GLOBAL_API_KEY: ${EVOLUTION_API_KEY:-change_me}
+      POSTGRES_AUTH_DB: postgresql://${POSTGRES_USER:-evolution}:${POSTGRES_PASSWORD:-evolution_password}@postgres:5432/${POSTGRES_DB:-evolution}?sslmode=disable
+      POSTGRES_USERS_DB: postgresql://${POSTGRES_USER:-evolution}:${POSTGRES_PASSWORD:-evolution_password}@postgres:5432/${POSTGRES_DB:-evolution}?sslmode=disable
+      DATABASE_SAVE_MESSAGES: "true"
+      CONNECT_ON_STARTUP: "false"
     ports:
-      - "${EVOLUTION_PORT:-8080}:8080"
+      - "${EVOLUTION_PORT:-4000}:4000"
+    volumes:
+      - evolution_data:/app/dbdata
+      - evolution_logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  evolution_data:
+  evolution_logs:
