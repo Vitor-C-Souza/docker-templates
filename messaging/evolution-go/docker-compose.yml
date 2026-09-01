@@ -1,0 +1,60 @@
+services:
+  evolution-go:
+    image: evoapicloud/evolution-go:latest
+    container_name: evolution-go
+    restart: unless-stopped
+
+    environment:
+      SERVER_PORT: 4000
+      CLIENT_NAME: ${EVOLUTION_CLIENT_NAME}
+      GLOBAL_API_KEY: ${EVOLUTION_GLOBAL_API_KEY}
+      POSTGRES_AUTH_DB: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evogo_auth?sslmode=disable
+      POSTGRES_USERS_DB: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evogo_users?sslmode=disable
+      DATABASE_SAVE_MESSAGES: ${DATABASE_SAVE_MESSAGES}
+      CONNECT_ON_STARTUP: ${CONNECT_ON_STARTUP}
+      WEBHOOK_FILES: ${WEBHOOK_FILES}
+      EVENT_IGNORE_GROUP: ${EVENT_IGNORE_GROUP}
+      EVENT_IGNORE_STATUS: ${EVENT_IGNORE_STATUS}
+
+    ports:
+      - "${EVOLUTION_PORT}:4000"
+
+    volumes:
+      - evolution_data:/app/dbdata
+      - evolution_logs:/app/logs
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:4000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_AUTH_DATABASE}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_AUTH_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  evolution_data:
+  evolution_logs:
+  postgres_data:
